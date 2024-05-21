@@ -1,4 +1,10 @@
-import { Agent, HttpOutboundTransport, WsOutboundTransport } from '@credo-ts/core'
+import { BleOutboundTransport, BleInboundTransport } from '@credo-ts/transport-ble'
+import {
+  Central,
+  Peripheral
+} from '@animo-id/react-native-ble-didcomm'
+// import { Agent, HttpOutboundTransport, WsOutboundTransport } from '@credo-ts/core'
+import { Agent } from '@credo-ts/core'
 import { useAgent } from '@credo-ts/react-hooks'
 import { agentDependencies } from '@credo-ts/react-native'
 import { useNavigation } from '@react-navigation/core'
@@ -230,11 +236,24 @@ const Splash: React.FC = () => {
             mediatorInvitationUrl: Config.MEDIATOR_URL,
           }),
         })
-        const wsTransport = new WsOutboundTransport()
-        const httpTransport = new HttpOutboundTransport()
+		const central = new Central()
+		const peripheral = new Peripheral();
 
-        newAgent.registerOutboundTransport(wsTransport)
-        newAgent.registerOutboundTransport(httpTransport)
+		await central.start();
+		await peripheral.start();
+
+		const bleInboundTransport = new BleInboundTransport(central);
+		const bleOutboundTransport = new BleOutboundTransport(peripheral)
+
+		newAgent.registerInboundTransport(bleInboundTransport)
+		newAgent.registerOutboundTransport(bleOutboundTransport)
+
+		// TODO: Add a setting to be able to switch between BLE and default transport (ws and http).
+        // const wsTransport = new WsOutboundTransport()
+        // const httpTransport = new HttpOutboundTransport()
+
+        // newAgent.registerOutboundTransport(wsTransport)
+        // newAgent.registerOutboundTransport(httpTransport)
 
         // If we haven't migrated to Aries Askar yet, we need to do this before we initialize the agent.
         if (!didMigrateToAskar(store.migration)) {
